@@ -1,20 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import type { Texture } from "three";
+import { Color } from "three";
 import type { DestinationDatum, FlowDatum, NodeDatum } from "../data/types";
-import { DestinationPeaks } from "./DestinationPeaks";
-import { FlowRibbons } from "./FlowRibbons";
-import { loadStrokeAlphaMaskTexture } from "../utils/createStrokeAlphaMask";
+import { BasemapLayer } from "./BasemapLayer";
+import { FlowParticles } from "./FlowParticles";
+import { NetRetentionPeaks } from "./NetRetentionPeaks";
 
 interface FlowCanvasProps {
   nodes: NodeDatum[];
   destinations: DestinationDatum[];
   flows: FlowDatum[];
-  activeDestinationId: string | null;
-  onDestinationHover: (id: string | null) => void;
-  onDestinationSelect: (id: string | null) => void;
+  aggregationSpacing: number;
+  dayMix: number;
+  showBasemap: boolean;
   enableBloom?: boolean;
 }
 
@@ -22,86 +22,97 @@ export function FlowCanvas({
   nodes,
   destinations,
   flows,
-  activeDestinationId,
-  onDestinationHover,
-  onDestinationSelect,
+  aggregationSpacing,
+  dayMix,
+  showBasemap,
   enableBloom = true
 }: FlowCanvasProps) {
-  const [alphaMask, setAlphaMask] = useState<Texture | null>(null);
-
   const nodesById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const destinationsById = useMemo(
     () => new Map(destinations.map((destination) => [destination.id, destination])),
     [destinations]
   );
-
-  useEffect(() => {
-    let disposed = false;
-    let texture: Texture | null = null;
-    loadStrokeAlphaMaskTexture().then((loadedTexture) => {
-      if (disposed) {
-        loadedTexture.dispose();
-        return;
-      }
-      texture = loadedTexture;
-      setAlphaMask(loadedTexture);
-    });
-
-    return () => {
-      disposed = true;
-      if (texture) {
-        texture.dispose();
-      }
-    };
-  }, []);
+  const backgroundColor = useMemo(() => {
+    const night = new Color("#010207");
+    const day = new Color("#091c30");
+    return night.lerp(day, dayMix * 0.85).getStyle();
+  }, [dayMix]);
+  const fogColor = useMemo(() => {
+    const night = new Color("#02040b");
+    const day = new Color("#10253b");
+    return night.lerp(day, dayMix * 0.85).getStyle();
+  }, [dayMix]);
+  const groundColor = useMemo(() => {
+    const night = new Color("#03060c");
+    const day = new Color("#0b2136");
+    return night.lerp(day, dayMix * 0.7).getStyle();
+  }, [dayMix]);
+  const ambientIntensity = 0.16 + dayMix * 0.24;
+  const dirIntensity = 0.35 + dayMix * 0.45;
 
   return (
     <Canvas
       camera={{ position: [0, -170, 115], fov: 45, near: 0.1, far: 2000 }}
       gl={{ antialias: true }}
       dpr={[1, 2]}
-      onPointerMissed={() => onDestinationHover(null)}
     >
-      <color attach="background" args={["#000000"]} />
-      <fog attach="fog" args={["#000000", 140, 480]} />
-      <ambientLight intensity={0.28} />
-      <directionalLight position={[120, -120, 180]} intensity={0.72} color="#d6e8ff" />
+      <color attach="background" args={[backgroundColor]} />
+      <fog attach="fog" args={[fogColor, 140, 500]} />
+      <ambientLight intensity={ambientIntensity} />
+      <directionalLight position={[120, -120, 180]} intensity={dirIntensity} color="#9dd5ff" />
 
       <mesh position={[0, 0, -0.15]} receiveShadow>
         <planeGeometry args={[800, 800]} />
-        <meshStandardMaterial color="#070a10" roughness={0.95} metalness={0.05} />
+        <meshStandardMaterial color={groundColor} roughness={0.98} metalness={0.02} />
       </mesh>
 
-      <DestinationPeaks
+      <BasemapLayer
+        nodes={nodes}
         destinations={destinations}
-        activeDestinationId={activeDestinationId}
-        onHover={onDestinationHover}
-        onSelect={onDestinationSelect}
+        dayMix={dayMix}
+        visible={showBasemap}
       />
 
-      {alphaMask ? (
-        <FlowRibbons
-          flows={flows}
-          nodesById={nodesById}
-          destinationsById={destinationsById}
-          activeDestinationId={activeDestinationId}
-          alphaMask={alphaMask}
-        />
-      ) : null}
+      <NetRetentionPeaks
+        flows={flows}
+        nodesById={nodesById}
+        destinationsById={destinationsById}
+        gridSize={aggregationSpacing}
+        dayMix={dayMix}
+        alpha={1}
+      />
+      <FlowParticles
+        flows={flows}
+        nodesById={nodesById}
+        destinationsById={destinationsById}
+        dayMix={dayMix}
+        alpha={1}
+      />
+      <FlowParticles
+        flows={flows}
+        nodesById={nodesById}
+        destinationsById={destinationsById}
+        dayMix={dayMix}
+        alpha={0.38}
+        distanceBoost
+      />
 
       <OrbitControls
         enablePan
         enableRotate
         enableZoom
-        minDistance={50}
-        maxDistance={420}
-        maxPolarAngle={Math.PI * 0.48}
+        enableDamping
+        dampingFactor={0.06}
+        minDistance={35}
+        maxDistance={520}
+        minPolarAngle={0.02}
+        maxPolarAngle={Math.PI * 0.98}
         target={[0, 0, 12]}
       />
 
       {enableBloom ? (
         <EffectComposer multisampling={0}>
-          <Bloom mipmapBlur intensity={0.9} luminanceThreshold={0.08} luminanceSmoothing={0.25} />
+          <Bloom mipmapBlur intensity={1.25} luminanceThreshold={0.06} luminanceSmoothing={0.3} />
         </EffectComposer>
       ) : null}
     </Canvas>

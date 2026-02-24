@@ -4,14 +4,16 @@ Wanderlust-style OD flow visualization adapted for `szflow.csv`.
 
 ## Features
 
-- Black-scene 3D map with ground plane and destination peaks.
-- Cubic Bezier flow ribbons with:
-  - width from normalized weight `w`
-  - 4 directional color bands using per-flow `cuts`
-  - broken-stroke alpha mask + noise discard in shader
-  - additive blending and optional bloom
+- Black-scene 3D map with ground plane.
+- OD movement rendered as animated particles on cubic Bezier paths with lateral offsets.
+- Net retention peaks (`inbound - outbound`) aggregated by grid and stacked as particles.
+- Adjustable aggregation spacing (`grid size`) for peak clustering.
+- Optional basemap layer (network lines + anchor points) toggle.
+- Day/night palette transitions driven by hour.
+- Hourly mode uses smooth interpolation between adjacent hours (fade-in/fade-out feel).
+- Extra distance-weighted micro-particles for subtle urban motion texture.
+- Additive blending and optional bloom for glow effects.
 - Orbit camera controls.
-- Destination hover/click highlighting for connected flows.
 - UI controls:
   - minimum `total` threshold
   - aggregated vs hourly mode
@@ -20,10 +22,9 @@ Wanderlust-style OD flow visualization adapted for `szflow.csv`.
 ## Project Structure
 
 - `src/data`: types + runtime data loader
-- `src/geometry`: flow ribbon geometry builder
-- `src/shaders`: custom flow shader material
-- `src/scene`: canvas scene, peaks, ribbons
-- `src/utils/createStrokeAlphaMask.ts`: canvas-based alpha mask fallback
+- `src/geometry`: reusable curve/ribbon geometry utilities (legacy layer kept)
+- `src/shaders`: particle shaders for flow layer + peak layer
+- `src/scene`: canvas scene, flow particles, net-retention peaks
 - `scripts/prepare-data.mjs`: CSV -> `/public/data` converter
 
 ## Data Files
