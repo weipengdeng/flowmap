@@ -48,7 +48,7 @@ export function createStrokeAlphaMaskTexture(size = 256): CanvasTexture {
 }
 
 export async function loadStrokeAlphaMaskTexture(
-  url = "/textures/stroke-alpha.png"
+  url = `${import.meta.env.BASE_URL}textures/stroke-alpha.png`
 ): Promise<Texture> {
   const loader = new TextureLoader();
   try {
@@ -60,4 +60,3 @@ export async function loadStrokeAlphaMaskTexture(
     return createStrokeAlphaMaskTexture();
   }
 }
-

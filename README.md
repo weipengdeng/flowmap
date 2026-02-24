@@ -45,3 +45,19 @@ Generated into `/public/data`:
 3. Start:
    - `npm run dev`
 
+## GitHub Pages
+
+This project is configured for repository Pages at:
+
+- `https://weipengdeng.github.io/flowmap/`
+
+Deployment is handled by:
+
+- `.github/workflows/deploy-pages.yml`
+
+Setup steps:
+
+1. Push to the `main` branch.
+2. In GitHub repository settings, open `Pages`.
+3. Set `Build and deployment` source to `GitHub Actions`.
+4. Wait for the `Deploy To GitHub Pages` workflow to finish.

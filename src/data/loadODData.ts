@@ -8,7 +8,9 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function loadODData(dataPath = "/data"): Promise<ODData> {
+const DEFAULT_DATA_PATH = `${import.meta.env.BASE_URL}data`;
+
+export async function loadODData(dataPath = DEFAULT_DATA_PATH): Promise<ODData> {
   const [meta, nodes, destinations, flows] = await Promise.all([
     fetchJson<MetaData>(`${dataPath}/meta.json`),
     fetchJson<NodeDatum[]>(`${dataPath}/nodes.json`),
@@ -25,4 +27,3 @@ export async function loadODData(dataPath = "/data"): Promise<ODData> {
 
   return { meta, nodes, destinations, flows, hourly };
 }
-
