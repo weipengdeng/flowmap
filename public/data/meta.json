@@ -1,0 +1,18 @@
+{
+  "source": "szflow.csv",
+  "createdAt": "2026-02-24T08:28:20.341804Z",
+  "bounds": {
+    "minX": -110.0,
+    "maxX": 110.0,
+    "minY": -47.88,
+    "maxY": 47.88
+  },
+  "center": [
+    114.16423874,
+    22.64667149
+  ],
+  "scale": 270.99877257,
+  "nodeCount": 6996,
+  "destinationCount": 2906,
+  "flowCount": 9136
+}
