@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { loadODData } from "./data/loadODData";
 import type { FlowDatum, ODData } from "./data/types";
 import { FlowCanvas } from "./scene/FlowCanvas";
+import type { BasemapMode } from "./scene/FlowCanvas";
 
 type ViewMode = "aggregated" | "hourly";
 const MAX_RENDERED_FLOWS = 1800;
+const BASEMAP_TEMPLATES = {
+  cartoDark: "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
+  cartoLight: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+  osm: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+} as const;
 
 function flowKey(flow: { o: string; d: string }): string {
   return `${flow.o}|${flow.d}`;
@@ -104,7 +110,8 @@ export default function App() {
   const [hourlySpeed, setHourlySpeed] = useState(0.08);
   const [aggregationSpacing, setAggregationSpacing] = useState(3);
   const [enableBloom, setEnableBloom] = useState(true);
-  const [showBasemap, setShowBasemap] = useState(true);
+  const [basemapMode, setBasemapMode] = useState<BasemapMode>("network");
+  const [rasterStyle, setRasterStyle] = useState<keyof typeof BASEMAP_TEMPLATES>("cartoDark");
 
   useEffect(() => {
     let mounted = true;
@@ -236,13 +243,15 @@ export default function App() {
   return (
     <div className="app-shell">
       <FlowCanvas
+        meta={data.meta}
         nodes={data.nodes}
         destinations={data.destinations}
         flows={visibleFlows}
         aggregationSpacing={aggregationSpacing}
         hourPosition={hourPosition}
         dayMix={dayMix}
-        showBasemap={showBasemap}
+        basemapMode={basemapMode}
+        basemapTemplate={BASEMAP_TEMPLATES[rasterStyle]}
         enableBloom={enableBloom}
       />
 
@@ -316,10 +325,59 @@ export default function App() {
 
         <div className="row">
           <label>Basemap</label>
-          <button type="button" onClick={() => setShowBasemap((state) => !state)}>
-            {showBasemap ? "On" : "Off"}
-          </button>
+          <div className="toggle-group">
+            <button
+              className={basemapMode === "none" ? "active" : ""}
+              type="button"
+              onClick={() => setBasemapMode("none")}
+            >
+              None
+            </button>
+            <button
+              className={basemapMode === "network" ? "active" : ""}
+              type="button"
+              onClick={() => setBasemapMode("network")}
+            >
+              Network
+            </button>
+            <button
+              className={basemapMode === "raster" ? "active" : ""}
+              type="button"
+              onClick={() => setBasemapMode("raster")}
+            >
+              Real Tiles
+            </button>
+          </div>
         </div>
+
+        {basemapMode === "raster" ? (
+          <div className="row">
+            <label>Tile source</label>
+            <div className="toggle-group">
+              <button
+                className={rasterStyle === "cartoDark" ? "active" : ""}
+                type="button"
+                onClick={() => setRasterStyle("cartoDark")}
+              >
+                Carto Dark
+              </button>
+              <button
+                className={rasterStyle === "cartoLight" ? "active" : ""}
+                type="button"
+                onClick={() => setRasterStyle("cartoLight")}
+              >
+                Carto Light
+              </button>
+              <button
+                className={rasterStyle === "osm" ? "active" : ""}
+                type="button"
+                onClick={() => setRasterStyle("osm")}
+              >
+                OSM
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {mode === "hourly" ? (
           <>

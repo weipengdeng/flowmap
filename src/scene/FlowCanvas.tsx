@@ -3,19 +3,24 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Color } from "three";
-import type { DestinationDatum, FlowDatum, NodeDatum } from "../data/types";
+import type { DestinationDatum, FlowDatum, MetaData, NodeDatum } from "../data/types";
 import { BasemapLayer } from "./BasemapLayer";
 import { FlowParticles } from "./FlowParticles";
 import { NetRetentionPeaks } from "./NetRetentionPeaks";
+import { RasterBasemapLayer } from "./RasterBasemapLayer";
+
+export type BasemapMode = "none" | "network" | "raster";
 
 interface FlowCanvasProps {
+  meta: MetaData;
   nodes: NodeDatum[];
   destinations: DestinationDatum[];
   flows: FlowDatum[];
   aggregationSpacing: number;
   hourPosition: number;
   dayMix: number;
-  showBasemap: boolean;
+  basemapMode: BasemapMode;
+  basemapTemplate: string;
   enableBloom?: boolean;
 }
 
@@ -24,13 +29,15 @@ function clamp01(value: number): number {
 }
 
 export function FlowCanvas({
+  meta,
   nodes,
   destinations,
   flows,
   aggregationSpacing,
   hourPosition,
   dayMix,
-  showBasemap,
+  basemapMode,
+  basemapTemplate,
   enableBloom = true
 }: FlowCanvasProps) {
   const nodesById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
@@ -113,7 +120,13 @@ export function FlowCanvas({
         nodes={nodes}
         destinations={destinations}
         dayMix={dayMix}
-        visible={showBasemap}
+        visible={basemapMode === "network"}
+      />
+      <RasterBasemapLayer
+        meta={meta}
+        dayMix={dayMix}
+        visible={basemapMode === "raster"}
+        template={basemapTemplate}
       />
 
       <NetRetentionPeaks

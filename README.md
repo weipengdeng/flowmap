@@ -8,7 +8,7 @@ High-tech OD flow visualization adapted for `szflow.csv`.
 - OD movement rendered as animated particles on cubic Bezier paths with lateral offsets.
 - Net retention peaks (`inbound - outbound`) aggregated by grid and stacked as particles.
 - Adjustable aggregation spacing (`grid size`) for peak clustering.
-- Optional basemap layer (network lines + anchor points) toggle.
+- Basemap modes: `None`, synthetic `Network`, or real `Raster Tiles` (Carto/OSM).
 - Day/night palette transitions driven by hour.
 - Hourly mode uses smooth interpolation between adjacent hours (fade-in/fade-out feel).
 - Extra distance-weighted micro-particles for subtle urban motion texture.
