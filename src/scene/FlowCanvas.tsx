@@ -13,9 +13,14 @@ interface FlowCanvasProps {
   destinations: DestinationDatum[];
   flows: FlowDatum[];
   aggregationSpacing: number;
+  hourPosition: number;
   dayMix: number;
   showBasemap: boolean;
   enableBloom?: boolean;
+}
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 export function FlowCanvas({
@@ -23,6 +28,7 @@ export function FlowCanvas({
   destinations,
   flows,
   aggregationSpacing,
+  hourPosition,
   dayMix,
   showBasemap,
   enableBloom = true
@@ -32,23 +38,42 @@ export function FlowCanvas({
     () => new Map(destinations.map((destination) => [destination.id, destination])),
     [destinations]
   );
+  const normalizedHour = ((hourPosition % 24) + 24) % 24;
+  const solar = Math.sin(((normalizedHour - 6) / 12) * Math.PI);
+  const daylight = clamp01((solar + 0.14) / 1.14);
+  const twilight = Math.exp(-Math.pow(solar / 0.34, 2));
+  const noonWhiten = Math.pow(daylight, 1.55);
+  const sunTravel = normalizedHour / 24;
+  const sunX = -240 + sunTravel * 480;
+  const sunY = -210 + Math.sin((sunTravel - 0.16) * Math.PI * 2) * 24;
+  const sunZ = 22 + daylight * 118 + twilight * 22;
+  const sunGlow = clamp01(daylight * 0.82 + twilight * 0.64);
   const backgroundColor = useMemo(() => {
-    const night = new Color("#010207");
-    const day = new Color("#091c30");
-    return night.lerp(day, dayMix * 0.85).getStyle();
-  }, [dayMix]);
+    const night = new Color("#020611");
+    const day = new Color("#2c688f");
+    const bright = new Color("#eaf3ff");
+    const sunset = new Color("#7a3f27");
+    const base = night.lerp(day, dayMix * 0.86);
+    return base.lerp(bright, noonWhiten * 0.08).lerp(sunset, twilight * 0.2).getStyle();
+  }, [dayMix, noonWhiten, twilight]);
   const fogColor = useMemo(() => {
-    const night = new Color("#02040b");
-    const day = new Color("#10253b");
-    return night.lerp(day, dayMix * 0.85).getStyle();
-  }, [dayMix]);
+    const night = new Color("#02060f");
+    const day = new Color("#5b8fb8");
+    const bright = new Color("#f2f7ff");
+    const warm = new Color("#8a5730");
+    const base = night.lerp(day, dayMix * 0.84);
+    return base.lerp(bright, noonWhiten * 0.12).lerp(warm, twilight * 0.14).getStyle();
+  }, [dayMix, noonWhiten, twilight]);
   const groundColor = useMemo(() => {
-    const night = new Color("#03060c");
-    const day = new Color("#0b2136");
-    return night.lerp(day, dayMix * 0.7).getStyle();
-  }, [dayMix]);
-  const ambientIntensity = 0.16 + dayMix * 0.24;
-  const dirIntensity = 0.35 + dayMix * 0.45;
+    const night = new Color("#03070d");
+    const day = new Color("#275274");
+    const bright = new Color("#6c91af");
+    const warm = new Color("#4f2f1f");
+    const base = night.lerp(day, dayMix * 0.72);
+    return base.lerp(bright, noonWhiten * 0.07).lerp(warm, twilight * 0.1).getStyle();
+  }, [dayMix, noonWhiten, twilight]);
+  const ambientIntensity = 0.17 + dayMix * 0.31 + twilight * 0.06;
+  const dirIntensity = 0.34 + daylight * 0.66 + twilight * 0.2;
 
   return (
     <Canvas
@@ -60,11 +85,29 @@ export function FlowCanvas({
       <fog attach="fog" args={[fogColor, 140, 500]} />
       <ambientLight intensity={ambientIntensity} />
       <directionalLight position={[120, -120, 180]} intensity={dirIntensity} color="#9dd5ff" />
+      <hemisphereLight args={["#f2f8ff", "#0f1d2d", 0.08 + daylight * 0.34]} />
 
       <mesh position={[0, 0, -0.15]} receiveShadow>
         <planeGeometry args={[800, 800]} />
         <meshStandardMaterial color={groundColor} roughness={0.98} metalness={0.02} />
       </mesh>
+
+      <group position={[sunX, sunY, sunZ]}>
+        <pointLight
+          color="#fff4dd"
+          intensity={sunGlow * 2.9}
+          distance={680}
+          decay={1.55}
+        />
+        <mesh>
+          <sphereGeometry args={[4.8, 16, 16]} />
+          <meshBasicMaterial color="#fff5df" transparent opacity={sunGlow * 0.84} />
+        </mesh>
+        <mesh>
+          <sphereGeometry args={[16, 20, 20]} />
+          <meshBasicMaterial color="#ffd08c" transparent opacity={sunGlow * 0.24} />
+        </mesh>
+      </group>
 
       <BasemapLayer
         nodes={nodes}
@@ -105,8 +148,8 @@ export function FlowCanvas({
         dampingFactor={0.06}
         minDistance={35}
         maxDistance={520}
-        minPolarAngle={0.02}
-        maxPolarAngle={Math.PI * 0.98}
+        minPolarAngle={0.001}
+        maxPolarAngle={Math.PI * 0.999}
         target={[0, 0, 12]}
       />
 

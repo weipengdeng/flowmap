@@ -1,6 +1,6 @@
-# Flowmap (React + TypeScript + Three.js)
+# Physical Consumption Flowmap (React + TypeScript + Three.js)
 
-Wanderlust-style OD flow visualization adapted for `szflow.csv`.
+High-tech OD flow visualization adapted for `szflow.csv`.
 
 ## Features
 

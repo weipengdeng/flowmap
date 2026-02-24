@@ -101,6 +101,7 @@ export default function App() {
   const [threshold, setThreshold] = useState(0);
   const [hourPosition, setHourPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [hourlySpeed, setHourlySpeed] = useState(0.08);
   const [aggregationSpacing, setAggregationSpacing] = useState(3);
   const [enableBloom, setEnableBloom] = useState(true);
   const [showBasemap, setShowBasemap] = useState(true);
@@ -201,7 +202,7 @@ export default function App() {
     }
     let frameId = 0;
     let lastTime = performance.now();
-    const hoursPerSecond = 0.2;
+    const hoursPerSecond = hourlySpeed;
     const tick = (now: number) => {
       const deltaSeconds = (now - lastTime) / 1000;
       lastTime = now;
@@ -215,7 +216,7 @@ export default function App() {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [hours, mode, playing]);
+  }, [hours, hourlySpeed, mode, playing]);
 
   const dayMix = useMemo(() => {
     const normalizedHour = ((hourPosition % 24) + 24) % 24;
@@ -239,13 +240,24 @@ export default function App() {
         destinations={data.destinations}
         flows={visibleFlows}
         aggregationSpacing={aggregationSpacing}
+        hourPosition={hourPosition}
         dayMix={dayMix}
         showBasemap={showBasemap}
         enableBloom={enableBloom}
       />
 
+      <div className="overlay time-badge">
+        <span className="time-badge-label">time</span>
+        <strong className="time-badge-value">{hourLabel}</strong>
+        <span className="time-badge-sub">
+          {mode === "hourly"
+            ? `${playing ? "playing" : "paused"} ${hourlySpeed.toFixed(2)} h/s`
+            : "aggregated palette"}
+        </span>
+      </div>
+
       <div className="overlay panel">
-        <h1>Flowmap Wanderlust</h1>
+        <h1>Physical Consumption Flowmap</h1>
         <p>
           {visibleFlows.length.toLocaleString()} / {baseFlows.length.toLocaleString()} flows
           {isCapped ? ` (top ${MAX_RENDERED_FLOWS.toLocaleString()})` : ""}
@@ -253,7 +265,6 @@ export default function App() {
           threshold: {Math.round(threshold).toLocaleString()}
           {" | "}
           grid: {aggregationSpacing.toFixed(1)}
-          {mode === "hourly" ? ` | hour ${hourLabel}` : ""}
         </p>
 
         <div className="row">
@@ -329,6 +340,18 @@ export default function App() {
               <button type="button" onClick={() => setPlaying((state) => !state)}>
                 {playing ? "Pause" : "Play"}
               </button>
+            </div>
+            <div className="row">
+              <label htmlFor="speed">Speed</label>
+              <input
+                id="speed"
+                type="range"
+                min={0.03}
+                max={0.35}
+                step={0.01}
+                value={hourlySpeed}
+                onChange={(event) => setHourlySpeed(Number(event.target.value))}
+              />
             </div>
           </>
         ) : null}

@@ -68,6 +68,45 @@ canvas {
   backdrop-filter: blur(10px);
 }
 
+.time-badge {
+  top: 16px;
+  right: 16px;
+  min-width: 148px;
+  padding: 10px 12px 9px;
+  border-radius: 12px;
+  border: 1px solid rgba(253, 197, 96, 0.32);
+  background:
+    radial-gradient(circle at top left, rgba(253, 169, 74, 0.22), transparent 44%),
+    linear-gradient(160deg, rgba(13, 23, 35, 0.83), rgba(5, 12, 22, 0.92));
+  backdrop-filter: blur(8px);
+  text-align: right;
+}
+
+.time-badge-label {
+  display: block;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7ba6cd;
+}
+
+.time-badge-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.12rem;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+  color: #ffe4b8;
+}
+
+.time-badge-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.67rem;
+  letter-spacing: 0.04em;
+  color: #9db4cb;
+}
+
 .panel h1 {
   margin: 0;
   font-size: 1.1rem;
@@ -148,5 +187,9 @@ input[type="range"] {
   .row {
     grid-template-columns: 80px 1fr;
   }
-}
 
+  .time-badge {
+    top: 12px;
+    right: 12px;
+  }
+}
